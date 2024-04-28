@@ -1,0 +1,25 @@
+{
+  "extends": [
+    "config:base"
+  ],
+  "packageRules": [
+    {
+      "matchUpdateTypes": ["minor", "patch", "pin", "digest"],
+      "automerge": true,
+      "groupName": "Dependencies (non-major)"
+    },
+    {
+      "matchUpdateTypes": ["major"],
+      "automerge": true,
+      "groupName": "Dependencies (major)"
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["^.*go$"],
+      "matchStrings": ["\/\/go:generate go run (?<depName>.+?)@(?<currentValue>.*?)\n$"],
+      "datasourceTemplate": "go"
+    }
+  ]
+}
