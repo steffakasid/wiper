@@ -25,8 +25,8 @@ func InitConfig() {
 	cobra.CheckErr(err)
 
 	configPath := path.Join(home, ".config", "wiper")
-
 	if CfgFile != "" {
+		configPath = CfgFile
 		viper.SetConfigFile(CfgFile)
 	} else {
 		viper.AddConfigPath(configPath)
@@ -41,9 +41,9 @@ func InitConfig() {
 		cleartext, err := decrypt.File(usedConfigFile, configFileType)
 
 		if err != nil {
-			eslog.Warnf("Error decrypting. %s. Maybe you're not using an encrypted config?", err)
+			eslog.Debugf("Error decrypting. %s", err)
 			if err := viper.ReadInConfig(); err != nil {
-				eslog.Warnf("Error reading config. %s. Are you using a config?", err)
+				eslog.Warnf("Error reading config. %s.", err)
 			} else {
 				eslog.Debug("Using config file:", viper.ConfigFileUsed())
 			}
@@ -62,9 +62,8 @@ func InitConfig() {
 	eslog.LogIfError(err, eslog.Fatal)
 }
 
-func getConfigFilename(configPath string) string {
+func getConfigFilename(pathWithoutExt string) string {
 
-	pathWithoutExt := path.Join(configPath, configFileName)
 	eslog.Debugf("Check if %s exists", pathWithoutExt)
 	if _, err := os.Stat(pathWithoutExt); err == nil {
 		return pathWithoutExt
