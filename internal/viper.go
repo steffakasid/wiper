@@ -24,17 +24,19 @@ func InitConfig() {
 	home, err := os.UserHomeDir()
 	cobra.CheckErr(err)
 
+	configPath := path.Join(home, ".config", "wiper")
+
 	if CfgFile != "" {
 		viper.SetConfigFile(CfgFile)
 	} else {
-		viper.AddConfigPath(path.Join(home, ".config", "wiper"))
+		viper.AddConfigPath(configPath)
 		viper.SetConfigType("yaml")
-		viper.SetConfigName(".wiper")
+		viper.SetConfigName(configFileName)
 	}
 
 	viper.AutomaticEnv()
 
-	usedConfigFile := getConfigFilename(home)
+	usedConfigFile := getConfigFilename(configPath)
 	if usedConfigFile != "" {
 		cleartext, err := decrypt.File(usedConfigFile, configFileType)
 
@@ -60,8 +62,9 @@ func InitConfig() {
 	eslog.LogIfError(err, eslog.Fatal)
 }
 
-func getConfigFilename(homedir string) string {
-	pathWithoutExt := path.Join(homedir, configFileName)
+func getConfigFilename(configPath string) string {
+
+	pathWithoutExt := path.Join(configPath, configFileName)
 	eslog.Debugf("Check if %s exists", pathWithoutExt)
 	if _, err := os.Stat(pathWithoutExt); err == nil {
 		return pathWithoutExt
