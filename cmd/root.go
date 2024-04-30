@@ -18,6 +18,7 @@ const (
 	wipeOutPatternFlag = "wipe_out_pattern"
 	excludeDirFlag     = "exclude_dir"
 	baseDirFlag        = "base_dir"
+	useTrashFlag       = "use_trash"
 	configFlag         = "config"
 	debugFlag          = "debug"
 )
@@ -56,6 +57,7 @@ func init() {
 	peristentFlags.StringArrayP(excludeDirFlag, "e", []string{}, "String array of excluded directories.")
 	peristentFlags.StringArrayP(wipeOutFlag, "w", []string{}, "String array of files to be wiped.")
 	peristentFlags.StringArrayP(wipeOutPatternFlag, "p", []string{}, "String array of patterns for files to be wiped.")
+	peristentFlags.BoolP(useTrashFlag, "t", false, "Enable using trash folder ($HOME/.Trash). If folder does not exist already, it will be created. [default: false]")
 	peristentFlags.BoolP(debugFlag, "d", false, "Enable debugging.")
 	peristentFlags.StringVar(&wiper.CfgFile, configFlag, "", "Config file to use insted default: $HOME/.config/wiper/config")
 
