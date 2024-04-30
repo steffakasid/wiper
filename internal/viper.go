@@ -58,7 +58,7 @@ func InitConfig() {
 		eslog.Debug("No config file used!")
 	}
 	fileWiper := &Wiper{}
-	err = viper.UnmarshalExact(fileWiper)
+	err = viper.Unmarshal(fileWiper)
 	eslog.LogIfError(err, eslog.Fatal)
 }
 
