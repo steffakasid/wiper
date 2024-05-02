@@ -5,6 +5,7 @@ import (
 	"path"
 	"regexp"
 	"slices"
+	"sync"
 
 	"github.com/steffakasid/eslog"
 )
@@ -24,11 +25,15 @@ func GetInstance() *Wiper {
 	return wiper
 }
 
-func (w Wiper) WipeFiles(dir string) error {
+// Funcion parameters only used to run recursive as Goroutine...
+func (w Wiper) WipeFiles(wg *sync.WaitGroup, dir string) error {
+
+	initializeWaitGroup := false
 
 	if dir == "" {
 		dir = w.BaseDir
 	}
+	eslog.Debug("CurrentDir", dir)
 
 	home, err := os.UserHomeDir()
 	if err != nil {
@@ -37,7 +42,7 @@ func (w Wiper) WipeFiles(dir string) error {
 	trash := path.Join(home, ".Trash")
 	if w.UseTrash {
 		if _, err := os.Stat(trash); err != nil {
-			eslog.Debugf("%s not existing creating it.")
+			eslog.Debugf("%s not existing creating it.", trash)
 			err := os.Mkdir(trash, 0700)
 			if err != nil {
 				return err
@@ -48,12 +53,23 @@ func (w Wiper) WipeFiles(dir string) error {
 	if entries, err := os.ReadDir(dir); err != nil {
 		return err
 	} else {
+		// on the first call it will be nil.
+		// In all other calls it must have been given as parameter
+		if wg == nil {
+			wg = &sync.WaitGroup{}
+			initializeWaitGroup = true
+		}
+
 		for _, entry := range entries {
 			if entry.IsDir() {
 				if !slices.Contains(w.ExcludeDir, entry.Name()) {
-					return w.WipeFiles(path.Join(dir, entry.Name()))
+					// TODO need an error channel
+					eslog.Debug("wg.Add(1)")
+					wg.Add(1)
+					go w.WipeFiles(wg, path.Join(dir, entry.Name()))
+				} else {
+					eslog.Debug("Exclude dir", entry.Name())
 				}
-				eslog.Debug("Exclude dir", entry.Name())
 			} else {
 				if slices.Contains(w.WipeOut, entry.Name()) || slices.ContainsFunc(w.WipeOutPattern, func(pattern string) bool {
 					matcher, err := regexp.Compile(pattern)
@@ -77,6 +93,16 @@ func (w Wiper) WipeFiles(dir string) error {
 				}
 			}
 		}
+		if !initializeWaitGroup {
+			eslog.Debug("defer wg.Done()")
+			defer wg.Done()
+		}
 	}
+
+	if initializeWaitGroup {
+		eslog.Debug("Waiting to finish all goroutines...")
+		wg.Wait()
+	}
+
 	return nil
 }

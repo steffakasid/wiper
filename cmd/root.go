@@ -33,7 +33,7 @@ var rootCmd = &cobra.Command{
 
 func RunE(cmd *cobra.Command, args []string) error {
 	wiper := wiper.GetInstance()
-	return wiper.WipeFiles("")
+	return wiper.WipeFiles(nil, "")
 }
 
 func Execute(version string) {
