@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 
 	"github.com/getsops/sops/v3/decrypt"
 	"github.com/spf13/cobra"
@@ -24,12 +25,12 @@ func InitConfig() {
 	home, err := os.UserHomeDir()
 	cobra.CheckErr(err)
 
-	configPath := path.Join(home, ".config", "wiper")
+	configPath := path.Join(home, ".config", "wiper", configFileName)
 	if CfgFile != "" {
 		configPath = CfgFile
 		viper.SetConfigFile(CfgFile)
 	} else {
-		viper.AddConfigPath(configPath)
+		viper.AddConfigPath(filepath.Dir(configPath))
 		viper.SetConfigType("yaml")
 		viper.SetConfigName(configFileName)
 	}
@@ -57,8 +58,8 @@ func InitConfig() {
 	} else {
 		eslog.Debug("No config file used!")
 	}
-	fileWiper := &Wiper{}
-	err = viper.Unmarshal(fileWiper)
+	wiper = &Wiper{}
+	err = viper.Unmarshal(wiper)
 	eslog.LogIfError(err, eslog.Fatal)
 }
 
