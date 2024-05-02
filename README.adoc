@@ -1,3 +1,19 @@
 = WIPER
 
 Wiper is a tool which can be used to delete unwanted files from folders. Files to be wiped can be configured. Also can be specified if folders should be excluded (e.g. to exclude the `Library` folder on MacOS).
+
+== Sample Config
+
+[source,yaml]
+----
+---
+wipe_out_pattern:
+  - ".*.orig"
+exclude_dir:
+  - Library
+  - Applications
+  - .Trash
+  - go
+  - .git
+base_dir: /Users/sid/Projects
+----
