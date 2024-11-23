@@ -21,5 +21,18 @@
       "matchStrings": ["\/\/go:generate go run (?<depName>.+?)@(?<currentValue>.*?)\n$"],
       "datasourceTemplate": "go"
     }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": [
+        "^.github\/workflows\/.*\\.yml$"
+      ],
+      "matchStrings": [
+        "(?<depName>go)-version: (?<currentValue>.*?)\\s"
+      ],
+      "depNameTemplate": "go",
+      "datasourceTemplate": "golang-version"
+    }
   ]
 }
