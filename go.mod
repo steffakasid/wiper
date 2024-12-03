@@ -2,7 +2,7 @@ module github.com/steffakasid/wiper
 
 go 1.22.7
 
-toolchain go1.23.3
+toolchain go1.23.4
 
 require (
 	github.com/getsops/sops/v3 v3.9.2
