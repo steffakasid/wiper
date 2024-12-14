@@ -12,8 +12,6 @@ builds:
       - darwin
 checksum:
   name_template: "checksums.txt"
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
 changelog:
   sort: asc
   filters:
@@ -42,4 +40,4 @@ brews:
 
     homepage: "https://github.com/steffakasid/wiper"
     description: ""
-    license: "Apache-2.0"
+    license: s"Apache-2.0"
