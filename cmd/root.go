@@ -28,10 +28,19 @@ var rootCmd = &cobra.Command{
 	Use:   "wiper",
 	Short: "{ .Values.ShortDescription }",
 	Long:  `{ .Values.LongDescription }`,
-	RunE:  RunE,
+	RunE:  RunWiperE,
 }
 
-func RunE(cmd *cobra.Command, args []string) error {
+func RunWiperE(cmd *cobra.Command, args []string) error {
+
+	if viper.GetBool(debugFlag) {
+		err := eslog.Logger.SetLogLevel("debug")
+		eslog.LogIfError(err, eslog.Error)
+	} else {
+		err := eslog.Logger.SetLogLevel("info")
+		eslog.LogIfError(err, eslog.Error)
+	}
+
 	wiper := wiper.GetInstance()
 	return wiper.WipeFiles(nil, "")
 }
