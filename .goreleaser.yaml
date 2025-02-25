@@ -40,6 +40,6 @@ brews:
     # Default is the root directory.
     directory: Formula
 
-    homepage: "https://github.com/steffakasid/wiper"
+    homepage: https://github.com/steffakasid/wiper
     description: ""
-    license: s"Apache-2.0"
+    license: Apache-2.0
