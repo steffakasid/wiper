@@ -16,6 +16,9 @@ type Wiper struct {
 	ExcludeDir     []string `json:"exclude_dir,omitempty" mapstructure:"exclude_dir" yaml:"exclude_dir"`
 	BaseDir        string   `json:"base_dir,omitempty" mapstructure:"base_dir" yaml:"base_dir"`
 	UseTrash       bool     `json:"use_trash,omitempty" mapstructure:"use_trash" yaml:"use_trash"`
+	InspectedFiles int      `json:"-"`
+	WipedFiles     int      `json:"-"`
+	mu             sync.Mutex
 }
 
 func GetInstance() *Wiper {
@@ -25,7 +28,7 @@ func GetInstance() *Wiper {
 	return wiper
 }
 
-func (w Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
+func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 	if dir == "" {
 		dir = w.BaseDir
 	}
@@ -67,7 +70,14 @@ func (w Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 				w.WipeFiles(wg, subDir, errChan)
 			}(path.Join(dir, entry.Name()))
 		} else {
+			w.mu.Lock()
+			w.InspectedFiles++
+			w.mu.Unlock()
+
 			if w.shouldWipe(entry.Name()) {
+				w.mu.Lock()
+				w.WipedFiles++
+				w.mu.Unlock()
 				if w.UseTrash {
 					err := os.Rename(path.Join(dir, entry.Name()), path.Join(trash, entry.Name()))
 					if err != nil {
@@ -91,7 +101,7 @@ func dirExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (w Wiper) shouldWipe(name string) bool {
+func (w *Wiper) shouldWipe(name string) bool {
 	if slices.Contains(w.WipeOut, name) {
 		return true
 	}

@@ -5,6 +5,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -53,6 +54,7 @@ func RunWiperE(cmd *cobra.Command, args []string) error {
 		}
 		return errors.New("Errors occurred during wiping files.")
 	}
+	fmt.Printf("Inspeced %d files and wiped %d files.\n", wiper.InspectedFiles, wiper.WipedFiles)
 	return nil
 }
 
