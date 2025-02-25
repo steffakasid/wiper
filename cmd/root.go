@@ -4,6 +4,7 @@ Copyright © 2024 steffakasid
 package cmd
 
 import (
+	"errors"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -44,7 +45,15 @@ func RunWiperE(cmd *cobra.Command, args []string) error {
 	}
 
 	wiper := wiper.GetInstance()
-	return wiper.WipeFiles(nil, "")
+	errChan := make(chan error)
+	wiper.WipeFiles(nil, "", errChan)
+	if len(errChan) > 0 {
+		for err := range errChan {
+			eslog.Error(err)
+		}
+		return errors.New("Errors occurred during wiping files.")
+	}
+	return nil
 }
 
 func Execute(version string) {

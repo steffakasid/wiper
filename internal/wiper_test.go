@@ -23,8 +23,10 @@ func TestWipeFiles(t *testing.T) {
 			BaseDir: testDir,
 		}
 
-		err = sut.WipeFiles(nil, "")
-		require.NoError(t, err)
+		errChan := make(chan error)
+
+		sut.WipeFiles(nil, "", errChan)
+		require.Len(t, errChan, 0)
 		assert.NoFileExists(t, fileToDelete.Name())
 	})
 
@@ -40,8 +42,9 @@ func TestWipeFiles(t *testing.T) {
 			WipeOutPattern: []string{pattern},
 			BaseDir:        testdir,
 		}
-		err = sut.WipeFiles(nil, "")
-		require.NoError(t, err)
+		errChan := make(chan error)
+		sut.WipeFiles(nil, "", errChan)
+		require.Len(t, errChan, 0)
 		assert.NoFileExists(t, fileToDelete.Name())
 	})
 
@@ -58,8 +61,9 @@ func TestWipeFiles(t *testing.T) {
 			BaseDir: testDir,
 		}
 
-		err = sut.WipeFiles(nil, "")
-		require.NoError(t, err)
+		errChan := make(chan error)
+		sut.WipeFiles(nil, "", errChan)
+		require.Len(t, errChan, 0)
 		assert.NoFileExists(t, fileToDelete.Name())
 		assert.FileExists(t, fileNotToDelete.Name())
 	})
@@ -81,8 +85,9 @@ func TestWipeFiles(t *testing.T) {
 			BaseDir:    testDir,
 		}
 
-		err = sut.WipeFiles(nil, "")
-		require.NoError(t, err)
+		errChan := make(chan error)
+		sut.WipeFiles(nil, "", errChan)
+		require.Len(t, errChan, 0)
 		assert.NoFileExists(t, fileToDelete.Name())
 		assert.FileExists(t, skippedFile.Name())
 	})
