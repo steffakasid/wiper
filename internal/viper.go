@@ -46,13 +46,13 @@ func InitConfig() {
 			if err := viper.ReadInConfig(); err != nil {
 				eslog.Warnf("Error reading config. %s.", err)
 			} else {
-				eslog.Debug("Using config file:", viper.ConfigFileUsed())
+				eslog.Debug("Using config file:", usedConfigFile)
 			}
 		} else {
 			if err := viper.ReadConfig(bytes.NewBuffer(cleartext)); err != nil {
 				eslog.Fatal(err)
 			} else {
-				eslog.Debug("Using sops encrypted config file:", viper.ConfigFileUsed())
+				eslog.Debug("Using sops encrypted config file:", usedConfigFile)
 			}
 		}
 	} else {
