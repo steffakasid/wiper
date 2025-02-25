@@ -25,10 +25,7 @@ func GetInstance() *Wiper {
 	return wiper
 }
 
-// Function parameters only used to run recursive as Goroutine...
 func (w Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
-	initializeWaitGroup := false
-
 	if dir == "" {
 		dir = w.BaseDir
 	}
@@ -39,69 +36,71 @@ func (w Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 		errChan <- err
 	}
 	trash := path.Join(home, ".Trash")
-	if w.UseTrash {
-		if _, err := os.Stat(trash); err != nil {
-			eslog.Debugf("%s not existing creating it.", trash)
-			err := os.Mkdir(trash, 0700)
-			if err != nil {
-				errChan <- err
-			}
+	if w.UseTrash && !dirExists(trash) {
+		eslog.Debugf("%s not existing creating it.", trash)
+		if err := os.Mkdir(trash, 0700); err != nil {
+			errChan <- err
 		}
 	}
 
-	if entries, err := os.ReadDir(dir); err != nil {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
 		errChan <- err
-	} else {
-		// on the first call it will be nil.
-		// In all other calls it must have been given as parameter
-		if wg == nil {
-			wg = &sync.WaitGroup{}
-			initializeWaitGroup = true
-		}
-
-		for _, entry := range entries {
-			if entry.IsDir() {
-				if !slices.Contains(w.ExcludeDir, entry.Name()) {
-					eslog.Debug("wg.Add(1)")
-					wg.Add(1)
-					go func(subDir string) {
-						defer wg.Done()
-						w.WipeFiles(wg, subDir, errChan)
-					}(path.Join(dir, entry.Name()))
-				} else {
-					eslog.Debug("Exclude dir", entry.Name())
-				}
-			} else {
-				if slices.Contains(w.WipeOut, entry.Name()) || slices.ContainsFunc(w.WipeOutPattern, func(pattern string) bool {
-					matcher, err := regexp.Compile(pattern)
-					eslog.LogIfError(err, eslog.Fatal)
-					return matcher.Match([]byte(entry.Name()))
-				}) {
-					if w.UseTrash {
-						err := os.Rename(path.Join(dir, entry.Name()), path.Join(trash, entry.Name()))
-						if err != nil {
-							errChan <- err
-						}
-					} else {
-						err := os.Remove(path.Join(dir, entry.Name()))
-						if err != nil {
-							errChan <- err
-						}
-					}
-				} else {
-					eslog.Debug("Skipping", entry.Name())
-				}
-			}
-		}
-		if !initializeWaitGroup {
-			eslog.Debug("defer wg.Done()")
-			defer wg.Done()
-		}
+		return
 	}
 
-	if initializeWaitGroup {
-		eslog.Debug("Waiting to finish all goroutines...")
-		wg.Wait()
+	if wg == nil {
+		wg = &sync.WaitGroup{}
+		defer wg.Wait()
 		close(errChan)
 	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			if slices.Contains(w.ExcludeDir, entry.Name()) {
+				eslog.Debug("Exclude dir", entry.Name())
+				continue
+			}
+			wg.Add(1)
+			go func(subDir string) {
+				defer wg.Done()
+				w.WipeFiles(wg, subDir, errChan)
+			}(path.Join(dir, entry.Name()))
+		} else {
+			if w.shouldWipe(entry.Name()) {
+				if w.UseTrash {
+					err := os.Rename(path.Join(dir, entry.Name()), path.Join(trash, entry.Name()))
+					if err != nil {
+						errChan <- err
+					}
+				} else {
+					err := os.Remove(path.Join(dir, entry.Name()))
+					if err != nil {
+						errChan <- err
+					}
+				}
+			} else {
+				eslog.Debug("Skipping", entry.Name())
+			}
+		}
+	}
+}
+
+func dirExists(path string) bool {
+	_, err := os.Stat(path)
+	return !os.IsNotExist(err)
+}
+
+func (w Wiper) shouldWipe(name string) bool {
+	if slices.Contains(w.WipeOut, name) {
+		return true
+	}
+	for _, pattern := range w.WipeOutPattern {
+		matcher, err := regexp.Compile(pattern)
+		eslog.LogIfError(err, eslog.Fatal)
+		if matcher.MatchString(name) {
+			return true
+		}
+	}
+	return false
 }
