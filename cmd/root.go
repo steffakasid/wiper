@@ -26,8 +26,8 @@ const (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "wiper",
-	Short: "{ .Values.ShortDescription }",
-	Long:  `{ .Values.LongDescription }`,
+	Short: "Wiper is a tool to wipe out files.",
+	Long:  `Wiper is a tool to wipe out files. Like e.g. *.orig files created by editors.`,
 	RunE:  RunWiperE,
 }
 
@@ -36,9 +36,11 @@ func RunWiperE(cmd *cobra.Command, args []string) error {
 	if viper.GetBool(debugFlag) {
 		err := eslog.Logger.SetLogLevel("debug")
 		eslog.LogIfError(err, eslog.Error)
+		eslog.Info("Debugging enabled.")
 	} else {
 		err := eslog.Logger.SetLogLevel("info")
 		eslog.LogIfError(err, eslog.Error)
+		eslog.Info("Debugging disabled.")
 	}
 
 	wiper := wiper.GetInstance()
