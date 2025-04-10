@@ -461,6 +461,8 @@ github.com/steffakasid/eslog v0.3.3 h1:NcwMyHYMzalLmbxq5OktqRlC48pnl59cqJZwSfdZQ
 github.com/steffakasid/eslog v0.3.3/go.mod h1:1MosCTXMIiDlvBGIx+QDmFRPuabdz0b1KYvH/PqJ80k=
 github.com/steffakasid/eslog v0.3.4 h1:3MGPOHGZA9HKNjLJbjEFNXN+O08y84+G8L8D4rGF5cs=
 github.com/steffakasid/eslog v0.3.4/go.mod h1:bTrYi07QXjzfqFVyAb+jVwX4PONsQXR5AKjY5GEi4w0=
+github.com/steffakasid/eslog v0.3.5 h1:t4eW3tbXzwqVHXgYQsSUVDVKAB5GeJUoHdO/fnLt1wk=
+github.com/steffakasid/eslog v0.3.5/go.mod h1:bTrYi07QXjzfqFVyAb+jVwX4PONsQXR5AKjY5GEi4w0=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=
 github.com/stretchr/objx v0.4.0/go.mod h1:YvHI0jy2hoMjB+UWwv71VJQ9isScKT/TqJzVSSt89Yw=
 github.com/stretchr/objx v0.5.0/go.mod h1:Yh+to48EsGEfYuaHDzXPcE3xhTkx73EhmCGUpEOglKo=
