@@ -6,7 +6,7 @@ require (
 	github.com/getsops/sops/v3 v3.10.1
 	github.com/spf13/cobra v1.9.1
 	github.com/spf13/viper v1.20.1
-	github.com/steffakasid/eslog v0.3.4
+	github.com/steffakasid/eslog v0.3.5
 	github.com/stretchr/testify v1.10.0
 )
 
