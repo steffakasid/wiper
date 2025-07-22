@@ -19,6 +19,7 @@ const (
 	wipeOutFlag        = "wipe_out"
 	wipeOutPatternFlag = "wipe_out_pattern"
 	excludeDirFlag     = "exclude_dir"
+	excludeFileFlag    = "exclude_file"
 	baseDirFlag        = "base_dir"
 	useTrashFlag       = "use_trash"
 	configFlag         = "config"
@@ -52,7 +53,7 @@ func RunWiperE(cmd *cobra.Command, args []string) error {
 		for err := range errChan {
 			eslog.Error(err)
 		}
-		return errors.New("Errors occurred during wiping files.")
+		return errors.New("Errors occurred during wiping files")
 	}
 	fmt.Printf("Inspeced %d files and wiped %d files.\n", wiper.InspectedFiles, wiper.WipedFiles)
 	return nil
@@ -77,6 +78,7 @@ func init() {
 	cobra.CheckErr(err)
 	peristentFlags.StringP(baseDirFlag, "b", home, "Base dir to scan files to be wiped out.")
 	peristentFlags.StringArrayP(excludeDirFlag, "e", []string{}, "String array of excluded directories.")
+	peristentFlags.StringArrayP(excludeFileFlag, "f", []string{}, "String array of excluded files.")
 	peristentFlags.StringArrayP(wipeOutFlag, "w", []string{}, "String array of files to be wiped.")
 	peristentFlags.StringArrayP(wipeOutPatternFlag, "p", []string{}, "String array of patterns for files to be wiped.")
 	peristentFlags.BoolP(useTrashFlag, "t", false, "Enable using trash folder ($HOME/.Trash). If folder does not exist already, it will be created. [default: false]")

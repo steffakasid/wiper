@@ -91,4 +91,20 @@ func TestWipeFiles(t *testing.T) {
 		assert.NoFileExists(t, fileToDelete.Name())
 		assert.FileExists(t, skippedFile.Name())
 	})
+
+	t.Run("Exclude file", func(t *testing.T) {
+		testDir := t.TempDir()
+		fileToExclude, err := os.CreateTemp(testDir, "")
+		require.NoError(t, err)
+
+		sut := Wiper{
+			ExcludeFile: []string{fileToExclude.Name()},
+			BaseDir:     testDir,
+		}
+
+		errChan := make(chan error)
+		sut.WipeFiles(nil, "", errChan)
+		require.Len(t, errChan, 0)
+		assert.FileExists(t, fileToExclude.Name())
+	})
 }

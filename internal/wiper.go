@@ -13,6 +13,7 @@ import (
 type Wiper struct {
 	WipeOut        []string `json:"wipe_out,omitempty" mapstructure:"wipe_out" yaml:"wipe_out"`
 	WipeOutPattern []string `json:"wipe_out_pattern,omitempty"  mapstructure:"wipe_out_pattern"  yaml:"wipe_out_pattern"`
+	ExcludeFile    []string `json:"exclude_file,omitempty" mapstructure:"exclude_file" yaml:"exclude_file"`
 	ExcludeDir     []string `json:"exclude_dir,omitempty" mapstructure:"exclude_dir" yaml:"exclude_dir"`
 	BaseDir        string   `json:"base_dir,omitempty" mapstructure:"base_dir" yaml:"base_dir"`
 	UseTrash       bool     `json:"use_trash,omitempty" mapstructure:"use_trash" yaml:"use_trash"`
@@ -104,12 +105,13 @@ func dirExists(path string) bool {
 func (w *Wiper) shouldWipe(name string) bool {
 	if slices.Contains(w.WipeOut, name) {
 		return true
-	}
-	for _, pattern := range w.WipeOutPattern {
-		matcher, err := regexp.Compile(pattern)
-		eslog.LogIfError(err, eslog.Fatal)
-		if matcher.MatchString(name) {
-			return true
+	} else if !slices.Contains(w.ExcludeFile, name) {
+		for _, pattern := range w.WipeOutPattern {
+			matcher, err := regexp.Compile(pattern)
+			eslog.LogIfError(err, eslog.Fatal)
+			if matcher.MatchString(name) {
+				return true
+			}
 		}
 	}
 	return false
