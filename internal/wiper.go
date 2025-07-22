@@ -35,11 +35,7 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 	}
 	eslog.Debug("CurrentDir", dir)
 
-	home, _ := os.UserHomeDir()
-	trash := path.Join(home, ".Trash")
-	if w.UseTrash && !dirExists(trash) {
-		_ = os.Mkdir(trash, 0700)
-	}
+	trash := initTrash(w)
 
 	entries, err := os.ReadDir(dir)
 	if err != nil {
@@ -61,6 +57,15 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 			w.handleFile(dir, trash, name, errChan)
 		}
 	}
+}
+
+func initTrash(w *Wiper) string {
+	home, _ := os.UserHomeDir()
+	trash := path.Join(home, ".Trash")
+	if w.UseTrash && !dirExists(trash) {
+		_ = os.Mkdir(trash, 0700)
+	}
+	return trash
 }
 
 func (w *Wiper) handleDir(wg *sync.WaitGroup, dir, name string, errChan chan error) {
