@@ -54,35 +54,47 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 	}
 
 	for _, entry := range entries {
+		name := entry.Name()
 		if entry.IsDir() {
-			if slices.Contains(w.ExcludeDir, entry.Name()) {
-				continue
-			}
-			wg.Add(1)
-			go func(subDir string) {
-				defer wg.Done()
-				w.WipeFiles(wg, subDir, errChan)
-			}(path.Join(dir, entry.Name()))
+			w.handleDir(wg, dir, name, errChan)
 		} else {
-			w.mu.Lock()
-			w.InspectedFiles++
-			w.mu.Unlock()
-
-			if w.shouldWipe(entry.Name()) {
-				w.mu.Lock()
-				w.WipedFiles++
-				w.mu.Unlock()
-				var err error
-				if w.UseTrash {
-					err = os.Rename(path.Join(dir, entry.Name()), path.Join(trash, entry.Name()))
-				} else {
-					err = os.Remove(path.Join(dir, entry.Name()))
-				}
-				if err != nil {
-					errChan <- err
-				}
-			}
+			w.handleFile(dir, trash, name, errChan)
 		}
+	}
+}
+
+func (w *Wiper) handleDir(wg *sync.WaitGroup, dir, name string, errChan chan error) {
+	if slices.Contains(w.ExcludeDir, name) {
+		return
+	}
+	wg.Add(1)
+	go func(subDir string) {
+		defer wg.Done()
+		w.WipeFiles(wg, subDir, errChan)
+	}(path.Join(dir, name))
+}
+
+func (w *Wiper) handleFile(dir, trash, name string, errChan chan error) {
+	w.mu.Lock()
+	w.InspectedFiles++
+	w.mu.Unlock()
+
+	if !w.shouldWipe(name) {
+		return
+	}
+
+	w.mu.Lock()
+	w.WipedFiles++
+	w.mu.Unlock()
+
+	var err error
+	if w.UseTrash {
+		err = os.Rename(path.Join(dir, name), path.Join(trash, name))
+	} else {
+		err = os.Remove(path.Join(dir, name))
+	}
+	if err != nil {
+		errChan <- err
 	}
 }
 
