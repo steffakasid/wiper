@@ -35,16 +35,10 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 	}
 	eslog.Debug("CurrentDir", dir)
 
-	home, err := os.UserHomeDir()
-	if err != nil {
-		errChan <- err
-	}
+	home, _ := os.UserHomeDir()
 	trash := path.Join(home, ".Trash")
 	if w.UseTrash && !dirExists(trash) {
-		eslog.Debugf("%s not existing creating it.", trash)
-		if err := os.Mkdir(trash, 0700); err != nil {
-			errChan <- err
-		}
+		_ = os.Mkdir(trash, 0700)
 	}
 
 	entries, err := os.ReadDir(dir)
@@ -62,7 +56,6 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 	for _, entry := range entries {
 		if entry.IsDir() {
 			if slices.Contains(w.ExcludeDir, entry.Name()) {
-				eslog.Debug("Exclude dir", entry.Name())
 				continue
 			}
 			wg.Add(1)
@@ -79,19 +72,15 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 				w.mu.Lock()
 				w.WipedFiles++
 				w.mu.Unlock()
+				var err error
 				if w.UseTrash {
-					err := os.Rename(path.Join(dir, entry.Name()), path.Join(trash, entry.Name()))
-					if err != nil {
-						errChan <- err
-					}
+					err = os.Rename(path.Join(dir, entry.Name()), path.Join(trash, entry.Name()))
 				} else {
-					err := os.Remove(path.Join(dir, entry.Name()))
-					if err != nil {
-						errChan <- err
-					}
+					err = os.Remove(path.Join(dir, entry.Name()))
 				}
-			} else {
-				eslog.Debug("Skipping", entry.Name())
+				if err != nil {
+					errChan <- err
+				}
 			}
 		}
 	}
