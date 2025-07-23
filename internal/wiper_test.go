@@ -12,6 +12,16 @@ import (
 
 func TestWipeFiles(t *testing.T) {
 
+	receiveAllErrors := func(errChan chan error) []error {
+		errs := []error{}
+		for err := range errChan {
+			if err != nil {
+				errs = append(errs, err)
+			}
+		}
+		return errs
+	}
+
 	t.Run("Success", func(t *testing.T) {
 		testDir := t.TempDir()
 		fileToDelete, err := os.CreateTemp(testDir, "")
@@ -24,9 +34,9 @@ func TestWipeFiles(t *testing.T) {
 		}
 
 		errChan := make(chan error)
-
 		sut.WipeFiles(nil, "", errChan)
-		require.Len(t, errChan, 0)
+		errs := receiveAllErrors(errChan)
+		assert.Empty(t, errs)
 		assert.NoFileExists(t, fileToDelete.Name())
 	})
 
@@ -44,7 +54,8 @@ func TestWipeFiles(t *testing.T) {
 		}
 		errChan := make(chan error)
 		sut.WipeFiles(nil, "", errChan)
-		require.Len(t, errChan, 0)
+		errs := receiveAllErrors(errChan)
+		assert.Empty(t, errs)
 		assert.NoFileExists(t, fileToDelete.Name())
 	})
 
@@ -63,7 +74,8 @@ func TestWipeFiles(t *testing.T) {
 
 		errChan := make(chan error)
 		sut.WipeFiles(nil, "", errChan)
-		require.Len(t, errChan, 0)
+		errs := receiveAllErrors(errChan)
+		assert.Empty(t, errs)
 		assert.NoFileExists(t, fileToDelete.Name())
 		assert.FileExists(t, fileNotToDelete.Name())
 	})
@@ -87,7 +99,8 @@ func TestWipeFiles(t *testing.T) {
 
 		errChan := make(chan error)
 		sut.WipeFiles(nil, "", errChan)
-		require.Len(t, errChan, 0)
+		errs := receiveAllErrors(errChan)
+		assert.Empty(t, errs)
 		assert.NoFileExists(t, fileToDelete.Name())
 		assert.FileExists(t, skippedFile.Name())
 	})
@@ -104,7 +117,8 @@ func TestWipeFiles(t *testing.T) {
 
 		errChan := make(chan error)
 		sut.WipeFiles(nil, "", errChan)
-		require.Len(t, errChan, 0)
+		errs := receiveAllErrors(errChan)
+		assert.Empty(t, errs)
 		assert.FileExists(t, fileToExclude.Name())
 	})
 }
