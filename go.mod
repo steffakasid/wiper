@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/getsops/sops/v3 v3.11.0
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/steffakasid/eslog v0.3.6
 	github.com/stretchr/testify v1.11.1
