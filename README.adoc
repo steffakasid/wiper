@@ -1,6 +1,8 @@
 = WIPER
 
-Wiper is a tool which can be used to delete unwanted files from folders. Files to be wiped can be configured. Also can be specified if folders should be excluded (e.g. to exclude the `Library` folder on MacOS).
+Wiper is a tool which can be used to delete unwanted files and folders from a directory tree. Files and directories to be wiped can be configured via names or regex patterns. You can also exclude specific files or folders (for example to exclude the `Library` folder on macOS).
+
+Wiper can optionally move deleted items to the user's Trash (`use_trash: true`) instead of permanently removing them.
 
 == Sample Config
 
@@ -8,7 +10,10 @@ Wiper is a tool which can be used to delete unwanted files from folders. Files t
 ----
 ---
 wipe_out_pattern:
-  - ".*.orig"
+  - ".*\.orig"
+wipe_out:
+  - todelete
+use_trash: false
 exclude_dir:
   - Library
   - Applications
