@@ -2,7 +2,6 @@ package wiper
 
 import (
 	"os"
-	"path"
 	"path/filepath"
 	"testing"
 
@@ -86,7 +85,7 @@ func TestWipeFiles(t *testing.T) {
 		require.NoError(t, err)
 		skippedDir, err := os.MkdirTemp(testDir, "")
 		require.NoError(t, err)
-		skippedFile, err := os.Create(path.Join(skippedDir, filepath.Base(fileToDelete.Name())))
+		skippedFile, err := os.Create(filepath.Join(skippedDir, filepath.Base(fileToDelete.Name())))
 		require.NoError(t, err)
 		err = skippedFile.Close()
 		require.NoError(t, err)
