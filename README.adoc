@@ -22,3 +22,83 @@ exclude_dir:
   - .git
 base_dir: /Users/sid/Projects
 ----
+
+== Installation
+
+The project provides several ways to install Wiper.
+
+.Homebrew (recommended on macOS)
+You can install Wiper via Homebrew if a tap or formula is available for this repository. Replace `<tap>` with the actual tap name:
+
+[source,bash]
+----
+brew tap steffakasid/wiper
+brew install steffakasid/wiper/wiper
+----
+
+.Binary releases
+Download prebuilt binaries from the GitHub Releases page for your platform and unpack the archive. Make the binary executable and move it to a directory in your `PATH`:
+
+[source,bash]
+----
+tar xzf wiper_{{version}}_darwin_amd64.tar.gz
+sudo mv wiper /usr/local/bin/
+----
+
+.Build from source
+Requires Go (>= 1.20). From the repository root:
+
+[source,bash]
+----
+go build -o wiper ./cmd/wiper
+sudo mv wiper /usr/local/bin/
+----
+
+== Usage
+
+Basic usage (binary):
+
+[source,bash]
+----
+wiper --config /path/to/wiper.yaml
+----
+
+Flags
+- `--config` : path to YAML configuration file (default: `$HOME/.config/wiper/config.yaml`)
+- `--dry-run` : show what would be deleted without removing files
+- `--use-trash` : override config and move deletions to the user's Trash
+
+Run `wiper --help` for the full list of flags supported by the CLI.
+
+== Configuration Options
+
+Wiper supports configuration via a YAML file and command-line flags. The main configuration keys are:
+
+- `base_dir` : root directory to scan for deletable files and folders.
+- `wipe_out` : list of literal file or directory names to remove (e.g. `todelete`). Directory names removed with `wipe_out` are deleted recursively.
+- `wipe_out_pattern` : list of regex patterns; any filename matching a pattern will be removed.
+- `exclude_file` : list of file names to never remove.
+- `exclude_dir` : list of directory names to skip traversing/processing.
+- `use_trash` : boolean; if true, files/dirs will be moved to the user's Trash instead of being permanently removed.
+
+Example configuration is shown above in the Sample Config section.
+
+== Configuration Precedence
+
+When Wiper runs, configuration values are resolved with the following precedence (highest → lowest):
+
+1. Command-line flags (e.g. `--use-trash`, `--config` override)
+2. Environment variables (if implemented by the CLI; e.g. `WIPER_BASE_DIR`)
+3. Configuration file (YAML) located at the path given by `--config`, or the default config path
+4. Built-in defaults hard-coded in the application
+
+For example, if `use_trash` is set to `true` in the config file but the user passes `--use-trash=false` on the CLI, the CLI flag wins and Trash will not be used.
+
+== Notes & Behavior
+
+- Directory wiping: items listed in `wipe_out` are evaluated as names. If a directory name matches, it is removed recursively with its contents.
+- Pattern matching: `wipe_out_pattern` is applied to file and directory names. Patterns are regular expressions compiled with Go's `regexp` package; ensure that backslashes are escaped in YAML strings.
+- Exclusions: `exclude_file` and `exclude_dir` are matched by literal name. If a directory is excluded via `exclude_dir`, it and its subtree are skipped entirely.
+- Error handling: Wiper reports errors via standard output and will continue processing other files. When run as a single process, Wiper aggregates errors and returns an exit code >0 on failures.
+
+If you want, I can also add a short example `wiper.yaml` file and a sample `brew` tap configuration to the repo.
