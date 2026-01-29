@@ -55,7 +55,8 @@ func RunWiperE(cmd *cobra.Command, args []string) error {
 		}
 		return errors.New("Errors occurred during wiping files")
 	}
-	fmt.Printf("Inspeced %d files and wiped %d files.\n", wiper.InspectedFiles, wiper.WipedFiles)
+	fmt.Printf("Inspected %d files and wiped %d files.\n", wiper.InspectedFiles, wiper.WipedFiles)
+	fmt.Printf("Inspected %d directories and wiped %d directories.\n", wiper.InspectedDirs, wiper.WipedDirs)
 	return nil
 }
 
