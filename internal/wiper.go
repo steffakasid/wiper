@@ -19,6 +19,8 @@ type Wiper struct {
 	UseTrash       bool     `json:"use_trash,omitempty" mapstructure:"use_trash" yaml:"use_trash"`
 	InspectedFiles int      `json:"-"`
 	WipedFiles     int      `json:"-"`
+	InspectedDirs  int      `json:"-"`
+	WipedDirs      int      `json:"-"`
 	mu             sync.Mutex
 }
 
@@ -34,6 +36,9 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 		dir = w.BaseDir
 	}
 	eslog.Debug("CurrentDir", dir)
+	w.mu.Lock()
+	w.InspectedDirs++
+	w.mu.Unlock()
 
 	trash := initTrash(w)
 
@@ -45,8 +50,10 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 
 	if wg == nil {
 		wg = &sync.WaitGroup{}
-		defer wg.Wait()
-		close(errChan)
+		defer func() {
+			wg.Wait()
+			close(errChan)
+		}()
 	}
 
 	for _, entry := range entries {
@@ -71,6 +78,13 @@ func initTrash(w *Wiper) string {
 func (w *Wiper) handleDir(wg *sync.WaitGroup, dir, name string, errChan chan error) {
 	if slices.Contains(w.ExcludeDir, name) {
 		return
+	}
+	if w.shouldWipe(name) {
+		w.mu.Lock()
+		w.WipedDirs++
+		w.mu.Unlock()
+		err := os.RemoveAll(path.Join(dir, name))
+		eslog.LogIfError(err, eslog.Error)
 	}
 	wg.Add(1)
 	go func(subDir string) {

@@ -120,4 +120,24 @@ func TestWipeFiles(t *testing.T) {
 		assert.Empty(t, errs)
 		assert.FileExists(t, fileToExclude.Name())
 	})
+
+	t.Run("Wipe directory", func(t *testing.T) {
+		testDir := t.TempDir()
+		subDir := filepath.Join(testDir, "todelete")
+		require.NoError(t, os.Mkdir(subDir, 0o755))
+		f, err := os.Create(filepath.Join(subDir, "inside.txt"))
+		require.NoError(t, err)
+		require.NoError(t, f.Close())
+
+		sut := Wiper{
+			WipeOut: []string{"todelete"},
+			BaseDir: testDir,
+		}
+
+		errChan := make(chan error)
+		sut.WipeFiles(nil, "", errChan)
+		errs := receiveAllErrors(errChan)
+		assert.Empty(t, errs)
+		assert.False(t, dirExists(subDir))
+	})
 }
