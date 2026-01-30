@@ -85,6 +85,7 @@ func (w *Wiper) handleDir(wg *sync.WaitGroup, dir, name string, errChan chan err
 		w.mu.Unlock()
 		err := os.RemoveAll(path.Join(dir, name))
 		eslog.LogIfError(err, eslog.Error)
+		return
 	}
 	wg.Add(1)
 	go func(subDir string) {
