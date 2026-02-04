@@ -41,10 +41,10 @@ func TestWipeFiles(t *testing.T) {
 
 	t.Run("Success with pattern", func(t *testing.T) {
 		testdir := t.TempDir()
-		pattern := `.*\.orig`
+		pattern := `.*\\.orig`
 		fileToDelete, err := os.CreateTemp(testdir, pattern)
 		require.NoError(t, err)
-		fileToDelete.Close()
+		err = fileToDelete.Close()
 		require.NoError(t, err)
 
 		sut := Wiper{
@@ -130,8 +130,8 @@ func TestWipeFiles(t *testing.T) {
 		require.NoError(t, f.Close())
 
 		sut := Wiper{
-			WipeOut: []string{"todelete"},
-			BaseDir: testDir,
+			WipeOutDirs: []string{"todelete"},
+			BaseDir:     testDir,
 		}
 
 		errChan := make(chan error)

@@ -11,17 +11,19 @@ import (
 )
 
 type Wiper struct {
-	WipeOut        []string `json:"wipe_out,omitempty" mapstructure:"wipe_out" yaml:"wipe_out"`
-	WipeOutPattern []string `json:"wipe_out_pattern,omitempty"  mapstructure:"wipe_out_pattern"  yaml:"wipe_out_pattern"`
-	ExcludeFile    []string `json:"exclude_file,omitempty" mapstructure:"exclude_file" yaml:"exclude_file"`
-	ExcludeDir     []string `json:"exclude_dir,omitempty" mapstructure:"exclude_dir" yaml:"exclude_dir"`
-	BaseDir        string   `json:"base_dir,omitempty" mapstructure:"base_dir" yaml:"base_dir"`
-	UseTrash       bool     `json:"use_trash,omitempty" mapstructure:"use_trash" yaml:"use_trash"`
-	InspectedFiles int      `json:"-"`
-	WipedFiles     int      `json:"-"`
-	InspectedDirs  int      `json:"-"`
-	WipedDirs      int      `json:"-"`
-	mu             sync.Mutex
+	WipeOut            []string `json:"wipe_out,omitempty" mapstructure:"wipe_out" yaml:"wipe_out"`
+	WipeOutPattern     []string `json:"wipe_out_pattern,omitempty"  mapstructure:"wipe_out_pattern"  yaml:"wipe_out_pattern"`
+	WipeOutDirs        []string `json:"wipe_out_dirs,omitempty" mapstructure:"wipe_out_dirs" yaml:"wipe_out_dirs"`
+	WipeOutPatternDirs []string `json:"wipe_out_pattern_dirs,omitempty" mapstructure:"wipe_out_pattern_dirs" yaml:"wipe_out_pattern_dirs"`
+	ExcludeFile        []string `json:"exclude_file,omitempty" mapstructure:"exclude_file" yaml:"exclude_file"`
+	ExcludeDir         []string `json:"exclude_dir,omitempty" mapstructure:"exclude_dir" yaml:"exclude_dir"`
+	BaseDir            string   `json:"base_dir,omitempty" mapstructure:"base_dir" yaml:"base_dir"`
+	UseTrash           bool     `json:"use_trash,omitempty" mapstructure:"use_trash" yaml:"use_trash"`
+	InspectedFiles     int      `json:"-"`
+	WipedFiles         int      `json:"-"`
+	InspectedDirs      int      `json:"-"`
+	WipedDirs          int      `json:"-"`
+	mu                 sync.Mutex
 }
 
 func GetInstance() *Wiper {
@@ -79,7 +81,7 @@ func (w *Wiper) handleDir(wg *sync.WaitGroup, dir, name string, errChan chan err
 	if slices.Contains(w.ExcludeDir, name) {
 		return
 	}
-	if w.shouldWipe(name) {
+	if w.shouldWipe(name, true) {
 		w.mu.Lock()
 		w.WipedDirs++
 		w.mu.Unlock()
@@ -99,7 +101,7 @@ func (w *Wiper) handleFile(dir, trash, name string, errChan chan error) {
 	w.InspectedFiles++
 	w.mu.Unlock()
 
-	if !w.shouldWipe(name) {
+	if !w.shouldWipe(name, false) {
 		return
 	}
 
@@ -123,11 +125,12 @@ func dirExists(path string) bool {
 	return !os.IsNotExist(err)
 }
 
-func (w *Wiper) shouldWipe(name string) bool {
-	if slices.Contains(w.WipeOut, name) {
+func (w *Wiper) matchWipe(name string, items, patterns, exclude []string) bool {
+	if slices.Contains(items, name) {
 		return true
-	} else if !slices.Contains(w.ExcludeFile, name) {
-		for _, pattern := range w.WipeOutPattern {
+	}
+	if !slices.Contains(exclude, name) {
+		for _, pattern := range patterns {
 			matcher, err := regexp.Compile(pattern)
 			eslog.LogIfError(err, eslog.Fatal)
 			if matcher.MatchString(name) {
@@ -136,4 +139,12 @@ func (w *Wiper) shouldWipe(name string) bool {
 		}
 	}
 	return false
+}
+
+func (w *Wiper) shouldWipe(name string, isDir bool) bool {
+	if isDir {
+		return w.matchWipe(name, w.WipeOutDirs, w.WipeOutPatternDirs, w.ExcludeDir)
+	}
+
+	return w.matchWipe(name, w.WipeOut, w.WipeOutPattern, w.ExcludeFile)
 }
