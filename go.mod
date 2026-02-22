@@ -3,7 +3,7 @@ module github.com/steffakasid/wiper
 go 1.26.0
 
 require (
-	github.com/getsops/sops/v3 v3.12.0
+	github.com/getsops/sops/v3 v3.12.1
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/steffakasid/eslog v0.3.8
