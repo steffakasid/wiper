@@ -126,10 +126,10 @@ func dirExists(path string) bool {
 }
 
 func (w *Wiper) matchWipe(name string, items, patterns, exclude []string) bool {
-	if slices.Contains(items, name) {
-		return true
-	}
 	if !slices.Contains(exclude, name) {
+		if slices.Contains(items, name) {
+			return true
+		}
 		for _, pattern := range patterns {
 			matcher, err := regexp.Compile(pattern)
 			eslog.LogIfError(err, eslog.Fatal)
