@@ -64,8 +64,7 @@ wiper --config /path/to/wiper.yaml
 ----
 
 Flags
-- `--config` : path to YAML configuration file (default: `$HOME/.config/wiper/config.yaml`)
-- `--dry-run` : show what would be deleted without removing files
+- `--config` : path to configuration file (default: `$HOME/.config/wiper/config`; `.yaml` and `.yml` are also supported)
 - `--use-trash` : override config and move deletions to the user's Trash
 
 Run `wiper --help` for the full list of flags supported by the CLI.

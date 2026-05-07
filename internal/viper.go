@@ -6,6 +6,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/getsops/sops/v3/decrypt"
 	"github.com/spf13/cobra"
@@ -20,6 +21,14 @@ const (
 
 var wiper *Wiper
 var CfgFile string
+
+func readPlainConfigFile(usedConfigFile string) {
+	if err := viper.ReadInConfig(); err != nil {
+		eslog.Warnf("Error reading config. %s.", err)
+	} else {
+		eslog.Debugf("Using config file: %s", usedConfigFile)
+	}
+}
 
 func InitConfig() {
 	home, err := os.UserHomeDir()
@@ -42,17 +51,17 @@ func InitConfig() {
 		cleartext, err := decrypt.File(usedConfigFile, configFileType)
 
 		if err != nil {
-			eslog.Debugf("Error decrypting. %s", err)
-			if err := viper.ReadInConfig(); err != nil {
-				eslog.Warnf("Error reading config. %s.", err)
+			if strings.Contains(err.Error(), "sops metadata not found") {
+				readPlainConfigFile(usedConfigFile)
 			} else {
-				eslog.Debug("Using config file:", usedConfigFile)
+				eslog.Debugf("Error decrypting config file %s. %s", usedConfigFile, err)
+				readPlainConfigFile(usedConfigFile)
 			}
 		} else {
 			if err := viper.ReadConfig(bytes.NewBuffer(cleartext)); err != nil {
 				eslog.Fatal(err)
 			} else {
-				eslog.Debug("Using sops encrypted config file:", usedConfigFile)
+				eslog.Debugf("Using sops encrypted config file: %s", usedConfigFile)
 			}
 		}
 	} else {

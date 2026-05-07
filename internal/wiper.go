@@ -37,7 +37,7 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 	if dir == "" {
 		dir = w.BaseDir
 	}
-	eslog.Debug("CurrentDir", dir)
+	eslog.Debugf("CurrentDir %s", dir)
 	w.mu.Lock()
 	w.InspectedDirs++
 	w.mu.Unlock()
