@@ -106,3 +106,7 @@ For example, if `use_trash` is set to `true` in the config file but the user pas
 - Error handling: Wiper reports errors via standard output and will continue processing other files. When run as a single process, Wiper aggregates errors and returns an exit code >0 on failures.
 
 If you want, I can also add a short example `wiper.yaml` file and a sample `brew` tap configuration to the repo.
+
+== TODO
+
+* Publish Homebrew formula updates through one shared tap repository for all projects.
