@@ -52,10 +52,12 @@ func RunWiperE(cmd *cobra.Command, args []string) error {
 	}
 	errChan := make(chan error)
 	wiper.WipeFiles(nil, "", errChan)
-	if len(errChan) > 0 {
-		for err := range errChan {
-			eslog.Error(err)
-		}
+	var errorsOccurred bool
+	for err := range errChan {
+		eslog.Error(err)
+		errorsOccurred = true
+	}
+	if errorsOccurred {
 		return errors.New("errors occurred during wiping files")
 	}
 	fmt.Printf("Inspected %d files and wiped %d files.\n", wiper.InspectedFiles, wiper.WipedFiles)
