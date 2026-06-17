@@ -47,6 +47,9 @@ func RunWiperE(cmd *cobra.Command, args []string) error {
 	}
 
 	wiper := wiper.GetInstance()
+	if wiper.UseTrash {
+		eslog.Info("use_trash enabled; deleted items will be moved to the user's Trash.")
+	}
 	errChan := make(chan error)
 	wiper.WipeFiles(nil, "", errChan)
 	if len(errChan) > 0 {
