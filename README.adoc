@@ -82,7 +82,7 @@ Wiper supports configuration via a YAML file and command-line flags. The main co
 Note: directory matching is explicit — Wiper will only use `wipe_out_dirs` / `wipe_out_pattern_dirs` to decide directory removals. If you want the same name to match both files and directories, include it in both `wipe_out` and `wipe_out_dirs` (or in both pattern lists).
 - `exclude_file` : list of file names to never remove.
 - `exclude_dir` : list of directory names to skip traversing/processing.
-- `use_trash` : boolean; if true, files/dirs will be moved to the user's Trash instead of being permanently removed.
+- `use_trash` : boolean; if true, files/dirs will be moved to the user's Trash instead of being permanently removed. If the Trash already contains an item with the same name, Wiper keeps the existing item and appends a timestamp suffix to the newly moved item.
 
 Example configuration is shown above in the Sample Config section.
 

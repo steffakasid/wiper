@@ -49,7 +49,7 @@ func TestRunWiperE(t *testing.T) {
 		readOnlyDir := filepath.Join(testDir, "readonly")
 		require.NoError(t, os.Mkdir(readOnlyDir, 0o555))
 		t.Cleanup(func() {
-			os.Chmod(readOnlyDir, 0o755)
+			assert.NoError(t, os.Chmod(readOnlyDir, 0o755))
 		})
 
 		wiper.CfgFile = ""

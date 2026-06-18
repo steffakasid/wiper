@@ -1,11 +1,15 @@
 package wiper
 
 import (
+	"fmt"
 	"os"
 	"path"
+	"path/filepath"
 	"regexp"
 	"slices"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/steffakasid/eslog"
 )
@@ -24,6 +28,7 @@ type Wiper struct {
 	InspectedDirs      int      `json:"-"`
 	WipedDirs          int      `json:"-"`
 	mu                 sync.Mutex
+	trashMu            sync.Mutex
 }
 
 func GetInstance() *Wiper {
@@ -61,7 +66,7 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 	for _, entry := range entries {
 		name := entry.Name()
 		if entry.IsDir() {
-			w.handleDir(wg, dir, name, errChan)
+			w.handleDir(wg, dir, trash, name, errChan)
 		} else {
 			w.handleFile(dir, trash, name, errChan)
 		}
@@ -77,7 +82,7 @@ func initTrash(w *Wiper) string {
 	return trash
 }
 
-func (w *Wiper) handleDir(wg *sync.WaitGroup, dir, name string, errChan chan error) {
+func (w *Wiper) handleDir(wg *sync.WaitGroup, dir, trash, name string, errChan chan error) {
 	if slices.Contains(w.ExcludeDir, name) {
 		return
 	}
@@ -85,8 +90,16 @@ func (w *Wiper) handleDir(wg *sync.WaitGroup, dir, name string, errChan chan err
 		w.mu.Lock()
 		w.WipedDirs++
 		w.mu.Unlock()
-		err := os.RemoveAll(path.Join(dir, name))
-		eslog.LogIfError(err, eslog.Error)
+		target := path.Join(dir, name)
+		var err error
+		if w.UseTrash {
+			err = w.moveToTrash(target, trash, true)
+		} else {
+			err = os.RemoveAll(target)
+		}
+		if err != nil {
+			errChan <- err
+		}
 		return
 	}
 	wg.Add(1)
@@ -111,7 +124,7 @@ func (w *Wiper) handleFile(dir, trash, name string, errChan chan error) {
 
 	var err error
 	if w.UseTrash {
-		err = os.Rename(path.Join(dir, name), path.Join(trash, name))
+		err = w.moveToTrash(path.Join(dir, name), trash, false)
 	} else {
 		err = os.Remove(path.Join(dir, name))
 	}
@@ -120,9 +133,54 @@ func (w *Wiper) handleFile(dir, trash, name string, errChan chan error) {
 	}
 }
 
-func dirExists(path string) bool {
+func (w *Wiper) moveToTrash(sourcePath, trash string, isDir bool) error {
+	w.trashMu.Lock()
+	defer w.trashMu.Unlock()
+
+	return os.Rename(sourcePath, uniqueTrashDestination(trash, filepath.Base(sourcePath), isDir))
+}
+
+func uniqueTrashDestination(trash, name string, isDir bool) string {
+	destination := filepath.Join(trash, name)
+	if !pathExists(destination) {
+		return destination
+	}
+
+	timestamp := time.Now().Format("20060102-150405.000000000")
+	for attempt := 0; ; attempt++ {
+		suffix := timestamp
+		if attempt > 0 {
+			suffix = fmt.Sprintf("%s-%d", timestamp, attempt)
+		}
+
+		candidate := filepath.Join(trash, trashNameWithPostfix(name, suffix, isDir))
+		if !pathExists(candidate) {
+			return candidate
+		}
+	}
+}
+
+func trashNameWithPostfix(name, postfix string, isDir bool) string {
+	if isDir {
+		return fmt.Sprintf("%s-%s", name, postfix)
+	}
+
+	ext := filepath.Ext(name)
+	if ext == "" || len(ext) == len(name) {
+		return fmt.Sprintf("%s-%s", name, postfix)
+	}
+
+	base := strings.TrimSuffix(name, ext)
+	return fmt.Sprintf("%s-%s%s", base, postfix, ext)
+}
+
+func pathExists(path string) bool {
 	_, err := os.Stat(path)
 	return !os.IsNotExist(err)
+}
+
+func dirExists(path string) bool {
+	return pathExists(path)
 }
 
 func (w *Wiper) matchWipe(name string, items, patterns, exclude []string) bool {

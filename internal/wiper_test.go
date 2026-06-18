@@ -3,12 +3,30 @@ package wiper
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func findTrashEntry(t *testing.T, trashDir, prefix, suffix string) string {
+	t.Helper()
+
+	entries, err := os.ReadDir(trashDir)
+	require.NoError(t, err)
+
+	for _, entry := range entries {
+		name := entry.Name()
+		if strings.HasPrefix(name, prefix) && strings.HasSuffix(name, suffix) {
+			return filepath.Join(trashDir, name)
+		}
+	}
+
+	t.Fatalf("no trash entry found with prefix %q and suffix %q", prefix, suffix)
+	return ""
+}
 
 func TestWipeFiles(t *testing.T) {
 
@@ -147,6 +165,45 @@ func TestWipeFiles(t *testing.T) {
 		assert.FileExists(t, trashPath)
 	})
 
+	t.Run("UseTrash suffixes duplicate file names", func(t *testing.T) {
+		testHome := t.TempDir()
+		t.Setenv("HOME", testHome)
+
+		testDir := filepath.Join(testHome, "source")
+		require.NoError(t, os.Mkdir(testDir, 0o755))
+
+		trashDir := filepath.Join(testHome, ".Trash")
+		require.NoError(t, os.Mkdir(trashDir, 0o755))
+
+		fileName := "duplicate.txt"
+		existingTrashFile := filepath.Join(trashDir, fileName)
+		require.NoError(t, os.WriteFile(existingTrashFile, []byte("existing"), 0o644))
+
+		sourceFile := filepath.Join(testDir, fileName)
+		require.NoError(t, os.WriteFile(sourceFile, []byte("fresh"), 0o644))
+
+		sut := Wiper{
+			WipeOut:  []string{fileName},
+			BaseDir:  testDir,
+			UseTrash: true,
+		}
+
+		errChan := make(chan error)
+		sut.WipeFiles(nil, "", errChan)
+		errs := receiveAllErrors(errChan)
+		assert.Empty(t, errs)
+		assert.NoFileExists(t, sourceFile)
+
+		content, err := os.ReadFile(existingTrashFile)
+		require.NoError(t, err)
+		assert.Equal(t, "existing", string(content))
+
+		suffixedPath := findTrashEntry(t, trashDir, "duplicate-", ".txt")
+		content, err = os.ReadFile(suffixedPath)
+		require.NoError(t, err)
+		assert.Equal(t, "fresh", string(content))
+	})
+
 	t.Run("Wipe directory", func(t *testing.T) {
 		testDir := t.TempDir()
 		subDir := filepath.Join(testDir, "todelete")
@@ -166,6 +223,41 @@ func TestWipeFiles(t *testing.T) {
 		assert.Empty(t, errs)
 		assert.False(t, dirExists(subDir))
 	})
+
+	t.Run("UseTrash suffixes duplicate directory names", func(t *testing.T) {
+		testHome := t.TempDir()
+		t.Setenv("HOME", testHome)
+
+		testDir := filepath.Join(testHome, "source")
+		require.NoError(t, os.Mkdir(testDir, 0o755))
+
+		trashDir := filepath.Join(testHome, ".Trash")
+		require.NoError(t, os.Mkdir(trashDir, 0o755))
+
+		existingTrashDir := filepath.Join(trashDir, "todelete")
+		require.NoError(t, os.Mkdir(existingTrashDir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(existingTrashDir, "old.txt"), []byte("existing"), 0o644))
+
+		sourceDir := filepath.Join(testDir, "todelete")
+		require.NoError(t, os.Mkdir(sourceDir, 0o755))
+		require.NoError(t, os.WriteFile(filepath.Join(sourceDir, "new.txt"), []byte("fresh"), 0o644))
+
+		sut := Wiper{
+			WipeOutDirs: []string{"todelete"},
+			BaseDir:     testDir,
+			UseTrash:    true,
+		}
+
+		errChan := make(chan error)
+		sut.WipeFiles(nil, "", errChan)
+		errs := receiveAllErrors(errChan)
+		assert.Empty(t, errs)
+		assert.False(t, dirExists(sourceDir))
+		assert.FileExists(t, filepath.Join(existingTrashDir, "old.txt"))
+
+		suffixedDir := findTrashEntry(t, trashDir, "todelete-", "")
+		assert.FileExists(t, filepath.Join(suffixedDir, "new.txt"))
+	})
 }
 
 func TestDirExists(t *testing.T) {
@@ -184,7 +276,7 @@ func TestDirExists(t *testing.T) {
 		testDir := t.TempDir()
 		file, err := os.CreateTemp(testDir, "test")
 		require.NoError(t, err)
-		defer file.Close()
+		require.NoError(t, file.Close())
 
 		result := dirExists(file.Name())
 		assert.True(t, result, "dirExists should return true for existing file")
@@ -389,11 +481,40 @@ func TestHandleDir(t *testing.T) {
 			}
 		}()
 
-		sut.handleDir(&wg, testDir, "todelete", errChan)
+		sut.handleDir(&wg, testDir, filepath.Join(testDir, ".Trash"), "todelete", errChan)
 		wg.Wait()
 		close(errChan)
 
 		assert.False(t, dirExists(subDir))
+		assert.Equal(t, 1, sut.WipedDirs)
+	})
+
+	t.Run("green case - directory moved to trash when UseTrash enabled", func(t *testing.T) {
+		testHome := t.TempDir()
+		t.Setenv("HOME", testHome)
+
+		testDir := filepath.Join(testHome, "source")
+		require.NoError(t, os.Mkdir(testDir, 0o755))
+
+		subDir := filepath.Join(testDir, "todelete")
+		require.NoError(t, os.Mkdir(subDir, 0o755))
+
+		trashDir := filepath.Join(testHome, ".Trash")
+		require.NoError(t, os.Mkdir(trashDir, 0o755))
+
+		sut := Wiper{
+			WipeOutDirs: []string{"todelete"},
+			UseTrash:    true,
+		}
+
+		var wg sync.WaitGroup
+		errChan := make(chan error, 10)
+
+		sut.handleDir(&wg, testDir, trashDir, "todelete", errChan)
+		wg.Wait()
+
+		assert.False(t, dirExists(subDir))
+		assert.True(t, dirExists(filepath.Join(trashDir, "todelete")))
 		assert.Equal(t, 1, sut.WipedDirs)
 	})
 
@@ -409,7 +530,7 @@ func TestHandleDir(t *testing.T) {
 		var wg sync.WaitGroup
 		errChan := make(chan error, 10)
 
-		sut.handleDir(&wg, testDir, "keepdir", errChan)
+		sut.handleDir(&wg, testDir, filepath.Join(testDir, ".Trash"), "keepdir", errChan)
 
 		assert.True(t, dirExists(subDir), "directory should not be deleted when excluded")
 		assert.Equal(t, 0, sut.WipedDirs)
@@ -427,7 +548,7 @@ func TestHandleDir(t *testing.T) {
 		var wg sync.WaitGroup
 		errChan := make(chan error, 10)
 
-		sut.handleDir(&wg, testDir, "keepdir", errChan)
+		sut.handleDir(&wg, testDir, filepath.Join(testDir, ".Trash"), "keepdir", errChan)
 		wg.Wait()
 
 		assert.True(t, dirExists(subDir), "directory should not be deleted when not matching")
@@ -498,7 +619,9 @@ func TestHandleFile(t *testing.T) {
 		testDir := t.TempDir()
 		readOnlyDir := filepath.Join(testDir, "readonly")
 		require.NoError(t, os.Mkdir(readOnlyDir, 0o555))
-		defer os.Chmod(readOnlyDir, 0o755)
+		t.Cleanup(func() {
+			assert.NoError(t, os.Chmod(readOnlyDir, 0o755))
+		})
 
 		sut := Wiper{
 			WipeOut: []string{"file.txt"},

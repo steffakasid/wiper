@@ -17,7 +17,7 @@ func TestGetConfigFilename(t *testing.T) {
 		configPath := filepath.Join(testDir, "config")
 		configFile, err := os.Create(configPath)
 		require.NoError(t, err)
-		configFile.Close()
+		require.NoError(t, configFile.Close())
 
 		result := getConfigFilename(configPath)
 		assert.Equal(t, configPath, result)
@@ -28,7 +28,7 @@ func TestGetConfigFilename(t *testing.T) {
 		configPath := filepath.Join(testDir, "config")
 		configFile, err := os.Create(configPath + ".yaml")
 		require.NoError(t, err)
-		configFile.Close()
+		require.NoError(t, configFile.Close())
 
 		result := getConfigFilename(configPath)
 		assert.Equal(t, configPath+".yaml", result)
@@ -39,7 +39,7 @@ func TestGetConfigFilename(t *testing.T) {
 		configPath := filepath.Join(testDir, "config")
 		configFile, err := os.Create(configPath + ".yml")
 		require.NoError(t, err)
-		configFile.Close()
+		require.NoError(t, configFile.Close())
 
 		result := getConfigFilename(configPath)
 		assert.Equal(t, configPath+".yml", result)
@@ -60,11 +60,11 @@ func TestGetConfigFilename(t *testing.T) {
 		// Create multiple config files
 		configNoExt, err := os.Create(configPath)
 		require.NoError(t, err)
-		configNoExt.Close()
+		require.NoError(t, configNoExt.Close())
 
 		configYAML, err := os.Create(configPath + ".yaml")
 		require.NoError(t, err)
-		configYAML.Close()
+		require.NoError(t, configYAML.Close())
 
 		result := getConfigFilename(configPath)
 		assert.Equal(t, configPath, result)
@@ -76,11 +76,11 @@ func TestGetConfigFilename(t *testing.T) {
 
 		configYAML, err := os.Create(configPath + ".yaml")
 		require.NoError(t, err)
-		configYAML.Close()
+		require.NoError(t, configYAML.Close())
 
 		configYML, err := os.Create(configPath + ".yml")
 		require.NoError(t, err)
-		configYML.Close()
+		require.NoError(t, configYML.Close())
 
 		result := getConfigFilename(configPath)
 		assert.Equal(t, configPath+".yaml", result)
