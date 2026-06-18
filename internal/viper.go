@@ -22,6 +22,20 @@ const (
 var wiper *Wiper
 var CfgFile string
 
+func refreshInstanceFromViper() error {
+	next := &Wiper{}
+	if err := viper.Unmarshal(next); err != nil {
+		return err
+	}
+
+	wiper = next
+	return nil
+}
+
+func RefreshInstanceFromViper() error {
+	return refreshInstanceFromViper()
+}
+
 func readPlainConfigFile(usedConfigFile string) {
 	if err := viper.ReadInConfig(); err != nil {
 		eslog.Warnf("Error reading config. %s.", err)
@@ -67,8 +81,7 @@ func InitConfig() {
 	} else {
 		eslog.Debug("No config file used!")
 	}
-	wiper = &Wiper{}
-	err = viper.Unmarshal(wiper)
+	err = refreshInstanceFromViper()
 	eslog.LogIfError(err, eslog.Fatal)
 }
 

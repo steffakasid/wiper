@@ -42,20 +42,20 @@ func (w *Wiper) WipeFiles(wg *sync.WaitGroup, dir string, errChan chan error) {
 	w.InspectedDirs++
 	w.mu.Unlock()
 
-	trash := initTrash(w)
-
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		errChan <- err
-		return
-	}
-
 	if wg == nil {
 		wg = &sync.WaitGroup{}
 		defer func() {
 			wg.Wait()
 			close(errChan)
 		}()
+	}
+
+	trash := initTrash(w)
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		errChan <- err
+		return
 	}
 
 	for _, entry := range entries {

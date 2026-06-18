@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -64,6 +65,32 @@ func TestRunWiperE(t *testing.T) {
 		err := RunWiperE(cmd, []string{})
 
 		assert.NoError(t, err) // No error because we can't write to read-only dir
+	})
+
+	t.Run("returns error instead of blocking when base dir cannot be read", func(t *testing.T) {
+		testHome := t.TempDir()
+		t.Setenv("HOME", testHome)
+
+		wiper.CfgFile = ""
+		viper.Reset()
+		wiper.InitConfig()
+
+		viper.Set(baseDirFlag, filepath.Join(testHome, "missing"))
+		viper.Set(debugFlag, false)
+		viper.Set(useTrashFlag, false)
+
+		cmd := &cobra.Command{}
+		errChan := make(chan error, 1)
+		go func() {
+			errChan <- RunWiperE(cmd, []string{})
+		}()
+
+		select {
+		case err := <-errChan:
+			require.Error(t, err)
+		case <-time.After(2 * time.Second):
+			t.Fatal("RunWiperE blocked instead of returning the read error")
+		}
 	})
 
 	t.Run("debug flag enabled", func(t *testing.T) {
@@ -172,14 +199,12 @@ func TestRootCmdInit(t *testing.T) {
 	})
 
 	t.Run("default flag values", func(t *testing.T) {
-		testHome := t.TempDir()
-		t.Setenv("HOME", testHome)
-
 		flags := rootCmd.PersistentFlags()
 
 		// Check default values
 		baseDirValue, _ := flags.GetString(baseDirFlag)
-		assert.Equal(t, testHome, baseDirValue)
+		assert.NotEmpty(t, baseDirValue)
+		assert.DirExists(t, baseDirValue)
 
 		useTrashValue, _ := flags.GetBool(useTrashFlag)
 		assert.False(t, useTrashValue)

@@ -46,17 +46,27 @@ func RunWiperE(cmd *cobra.Command, args []string) error {
 		eslog.Info("Debugging disabled.")
 	}
 
+	if err := wiper.RefreshInstanceFromViper(); err != nil {
+		return err
+	}
+
 	wiper := wiper.GetInstance()
 	if wiper.UseTrash {
 		eslog.Info("use_trash enabled; deleted items will be moved to the user's Trash.")
 	}
 	errChan := make(chan error)
+	errResult := make(chan bool, 1)
+	go func() {
+		var errorsOccurred bool
+		for err := range errChan {
+			eslog.Error(err)
+			errorsOccurred = true
+		}
+		errResult <- errorsOccurred
+	}()
+
 	wiper.WipeFiles(nil, "", errChan)
-	var errorsOccurred bool
-	for err := range errChan {
-		eslog.Error(err)
-		errorsOccurred = true
-	}
+	errorsOccurred := <-errResult
 	if errorsOccurred {
 		return errors.New("errors occurred during wiping files")
 	}
