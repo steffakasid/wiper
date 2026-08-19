@@ -1,6 +1,6 @@
 module github.com/steffakasid/wiper
 
-go 1.26.6
+go 1.27.0
 
 require (
 	github.com/getsops/sops/v3 v3.13.3
